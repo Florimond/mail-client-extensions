@@ -5,6 +5,7 @@ import "./Main.css";
 import { Link, MessageBar, MessageBarType} from 'office-ui-fabric-react';
 
 import Contact from '../Contact/Contact';
+import Selector from '../Contact/Selector';
 import Company from '../Company/Company';
 import Leads from "../Leads/Leads";
 import GrayOverlay from "../GrayOverlay";
@@ -19,8 +20,10 @@ import CompanyData from "../../../classes/Company";
 
 import AppContext from '../AppContext';
 
+
 enum Page {
     Main,
+    PartnerSelection,
 }
 
 type MainProps = {};
@@ -70,14 +73,15 @@ class Main extends React.Component<MainProps, MainState> {
 
         this.context.setIsLoading(true);
 
-        const cancellablePartnerRequest = sendHttpRequest(HttpVerb.POST, api.baseURL + api.getPartner, ContentType.Json, this.context.getConnectionToken(), {
+        const cancellablePartnerRequest = sendHttpRequest(HttpVerb.POST, api.baseURL + api.getPartners, ContentType.Json, this.context.getConnectionToken(), {
             email: email,
             name: displayName
         }, true);
         this.context.addRequestCanceller(cancellablePartnerRequest.cancel);
         cancellablePartnerRequest.promise.then(response => {
             const parsed = JSON.parse(response);
-            var partner = PartnerData.fromJSON(parsed.result.partner);
+            //var partner = PartnerData.fromJSON(parsed.result.partner);
+            const partners = parsed.result.partners.map(p => PartnerData.fromJSON(p))
             let enrichmentInfo = new EnrichmentInfo();
             if (parsed.result['enrichment_info']) {
                 enrichmentInfo = new EnrichmentInfo(parsed.result['enrichment_info'].type, parsed.result['enrichment_info'].info)
@@ -88,7 +92,16 @@ class Main extends React.Component<MainProps, MainState> {
                 showEnrichmentInfoMessage: true,
                 showPartnerCreatedMessage: true
             });
-            this.context.setPartner(partner, false);
+
+            parsed.result.partners.map(p => PartnerData.fromJSON(p))            
+            if (partners.length > 1) {
+                this.context.setPartners(partners, null, false);
+                this.setState({pageDisplayed: Page.PartnerSelection})
+            } else {
+                this.context.setPartners(partners, 0, false);
+                this.setState({pageDisplayed: Page.Main})
+            }
+            
         }).catch((error) => {
             console.log("Error catched: " + error);
             if (error.message == '0') {
@@ -141,7 +154,7 @@ class Main extends React.Component<MainProps, MainState> {
         if (cachedCompany) {
             partner.company = cachedCompany;
             this.setState({ EnrichmentInfo: new EnrichmentInfo() });
-            this.context.setPartner(partner, false);
+            this.context.setPartners([partner], 0, false);
         } else {
             const cancellableRequest = sendHttpRequest(HttpVerb.POST, api.iapLeadEnrichment, ContentType.Json, null, {"params": {
             "email": userEmail,
@@ -158,14 +171,14 @@ class Main extends React.Component<MainProps, MainState> {
                         EnrichmentInfo: new EnrichmentInfo(parsed.result.error),
                         showEnrichmentInfoMessage: true
                     });
-                    this.context.setPartner(partner, false);
+                    this.context.setPartners([partner], 0, false);
                     return;
                 }
                 const company = CompanyData.fromRevealJSON(parsed.result);
                 partner.company = company;
                 this.companyCache.add(company);
                 this.setState({ EnrichmentInfo: new EnrichmentInfo() });
-                this.context.setPartner(partner, false);
+                this.context.setPartners([partner], 0, false);
             }).catch(error => {
                 console.log("Error catched: " + error);
                 if (error.message == '0') {
@@ -180,7 +193,7 @@ class Main extends React.Component<MainProps, MainState> {
                     });    
                 }
                 // At least the info present in the mail will be displayed, not an empty screen.
-                this.context.setPartner(partner, false);
+                this.context.setPartners([partner], 0, false);
             });
         }
             
@@ -254,32 +267,45 @@ class Main extends React.Component<MainProps, MainState> {
             return null;
         }
 
-
-        switch(this.state.pageDisplayed)
+        if ((this.context.selectedPartner !== null && this.context.selectedPartner !== undefined))
         {
-            case Page.Main:
-            let connectionButton = <div className='link-like-button connect-button' onClick={() => this.context.navigation.goToLogin()}>Login</div>;
-            if (this.context.isConnected()){
-                connectionButton = <div className='link-like-button connect-button' onClick={() =>{this.context.disconnect();this.context.navigation.goToLogin();}}>Logout</div>
-            }
 
-            // In the normal disconnected flow, the company will be -1 and every info will be in additionalInfo.
-            // In that case Company should show up, it's designed to get the necessary info in addditionalInfo if not found elsewhere.
-            // In case of error with the IAP in non connected mode the company id will be -1 and additionalInfo === {}
-            // Then and only then the Company should not show.
-            return (
-                <>
-                    {this.context.isLoading ? <GrayOverlay></GrayOverlay> : null}
-                    <div className='message-bars'>
-                        {this._getMessageBars()}
-                    </div>
-                    <Contact />
-                    {this.context.modules.includes('crm') ? <Leads /> : null}
-                    {this.context.partner.company.id !== -1 || Object.keys(this.context.partner.company.additionalInfo).length !== 0 ? <Company /> : null}
-                    {connectionButton}
-                    
-                </>
-            );
+            /*switch(this.state.pageDisplayed)
+            {
+                case Page.Main:*/
+
+                    let connectionButton = <div className='link-like-button connect-button' onClick={() => this.context.navigation.goToLogin()}>Login</div>;
+                    if (this.context.isConnected()){
+                        connectionButton = <div className='link-like-button connect-button' onClick={() =>{this.context.disconnect();this.context.navigation.goToLogin();}}>Logout</div>
+                    }
+
+                    const partner = this.context.partners[this.context.selectedPartner];
+
+                    // In the normal disconnected flow, the company will be -1 and every info will be in additionalInfo.
+                    // In that case Company should show up, it's designed to get the necessary info in addditionalInfo if not found elsewhere.
+                    // In case of error with the IAP in non connected mode the company id will be -1 and additionalInfo === {}
+                    // Then and only then the Company should not show.
+                    return (
+                        <>
+                            {this.context.isLoading ? <GrayOverlay></GrayOverlay> : null}
+                            <div className='message-bars'>
+                                {this._getMessageBars()}
+                            </div>
+                            <Contact />
+                            {this.context.modules.includes('crm') ? <Leads /> : null}
+                            {partner.company.id !== -1 || Object.keys(partner.company.additionalInfo).length !== 0 ? <Company /> : null}
+                            {connectionButton}
+                            
+                        </>
+                    );
+                    /*
+                case Page.PartnerSelection:
+                    return <Selector/>
+                default:
+                    return null;
+            }*/
+        } else {
+            return <Selector/>
         }
     }
 }

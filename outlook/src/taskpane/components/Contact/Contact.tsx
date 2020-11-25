@@ -14,29 +14,34 @@ class Contact extends React.Component<ContactProps, ContactState> {
 
   addToContacts = () => {
     const requestJson = {
-        name: this.context.partner.name,
-        email: this.context.partner.email,
-        company: this.context.partner.company.id
+        name: this.context.partners[this.context.selectedPartner].name,
+        email: this.context.partners[this.context.selectedPartner].email,
+        company: this.context.partners[this.context.selectedPartner].company.id//this.context.partner.company.id
     }
     const cancellableRequest = sendHttpRequest(HttpVerb.POST, api.baseURL + api.contactCreate, ContentType.Json, this.context.getConnectionToken(), requestJson, true)
     this.context.addRequestCanceller(cancellableRequest.cancel);
     cancellableRequest.promise.then((response) => {
         console.log(response);
         const parsed = JSON.parse(response);
-        this.context.setPartnerId(parsed.result.id)
+        this.context.setPartnerId(this.context.selectedPartner, parsed.result.id) // TODO remove the first parameter as it is obvious?
         }).catch(function(error) {
         console.log("Error catched: " + error);
         })
     }
+
+    backToSelector = () => {
+        this.context.setSelectedPartner(null);
+    }
   
   render() {
+    const partner = this.context.partners[this.context.selectedPartner];
     const profileCardData: ProfileCardProps = {
         domain: undefined,
-        name: this.context.partner.name,
-        initials: this.context.partner.getInitials(),
-        icon: this.context.partner.image ? "data:image;base64, " + this.context.partner.image : undefined,
-        job: this.context.partner.title,
-        phone: this.context.partner.mobile || this.context.partner.phone,
+        name: partner.name,
+        initials: partner.getInitials(),
+        icon: partner.image ? "data:image;base64, " + this.context.partner.image : undefined,
+        job: partner.title,
+        phone: partner.mobile || partner.phone,
         twitter: undefined,
         facebook: undefined,
         crunchbase: undefined,
@@ -51,7 +56,8 @@ class Contact extends React.Component<ContactProps, ContactState> {
         <div className='tile-title-space'>
             <div className='tile-title'>
                 <div className='text'>CONTACT DETAILS</div>
-                {!this.context.isConnected() || this.context.partner.id === -1 ? <div className='button' onClick={this.context.isConnected() ? this.addToContacts : this.context.navigation.goToLogin}>Add</div> : null}
+                {(this.context.partners && this.context.partners.length > 1) ? <span className='link-like-button' onClick={this.backToSelector} >&larr; Back</span> : null}
+                {!this.context.isConnected() || partner.id === -1 ? <div className='button' onClick={this.context.isConnected() ? this.addToContacts : this.context.navigation.goToLogin}>Add</div> : null}
             </div>
         </div>
         

@@ -26,9 +26,11 @@ export interface AppState {
         goToLogin: () => void,
         goToMain: () => void
         },
-    partner: Partner,
-    setPartner: (p: Partner, isLoading: Boolean) => void,
-    setPartnerId: (id: number) => void,
+    partners: Partner[],
+    selectedPartner: number,
+    setPartners: (p: Partner[], selectedPartner: number, isLoading: Boolean) => void,
+    setSelectedPartner: (index: number) => void,
+    setPartnerId: (index: number, id: number) => void,
     modules: string[],
     setModules: (modules: string[]) => void,
     connect: (token) => void,
@@ -55,20 +57,32 @@ export default class App extends React.Component<AppProps, AppState> {
             lastLoaded: Date.now(),
             pageDisplayed: Page.Main,
             loginErrorMessage: "",
-            
+            selectedPartner: undefined,
+
             navigation: {
                 goToLogin: this.goToLogin,
                 goToMain: this.goToMain
             },
-            partner: new Partner(),
-            setPartner: (p: Partner, isLoading: Boolean) => {
-                const partnerCopy = Partner.fromJSON(JSON.parse(JSON.stringify(p)));
-                this.setState({partner: partnerCopy, isLoading: isLoading})
+            partners: [new Partner()],
+            setPartners: (partners: Partner[], selectedPartner: number, isLoading: Boolean) => {
+                const partnersCopy = partners.map(p => Partner.fromJSON(JSON.parse(JSON.stringify(p))));
+                this.setState({partners: partnersCopy, selectedPartner: selectedPartner, isLoading: isLoading})
             },
-            setPartnerId: (id: number) => {
-                const partnerCopy = Partner.fromJSON(JSON.parse(JSON.stringify(this.state.partner)));
-                partnerCopy.id = id;
-                this.setState({partner: partnerCopy})
+            setSelectedPartner: (index: number) => {
+                this.setState({selectedPartner: index});
+            },
+            setPartnerId: (index: number, id: number) => {
+                if (!this.state.selectedPartner) {
+                    return;
+                }
+                let partnersCopy = []
+                for (let i = 0; i < this.state.partners.length; ++i) {
+                    const partnersCopy = Partner.fromJSON(JSON.parse(JSON.stringify(this.state.partners[i])));
+                    if (i === index) {
+                        partnersCopy[i].id = id;
+                    }
+                }
+                this.setState({partners: partnersCopy})
             },
             modules: [],
             setModules: (modules: string[]) => {
@@ -93,7 +107,7 @@ export default class App extends React.Component<AppProps, AppState> {
             setDoReload: (doReload: Boolean) => {
                 this.setState({
                     doReload: doReload,
-                    partner: new Partner(),
+                    partners: [new Partner()],
                     modules: []
                 });
             },

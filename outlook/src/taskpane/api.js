@@ -4,6 +4,7 @@ const api = {
     getLeads: "/mail_client_extension/lead/get_by_partner_id",
     //deleteLead: "/mail_client_extension/lead/delete",
     getPartner: "/mail_client_extension/partner/get",
+    getPartners: "/mail_client_extension/partners/get",
     logMail: "/mail_client_extension/log_single_mail_content",
     getInstalledModules: "/mail_client_extension/modules/get",
     contactCreate: '/mail_client_extension/partner/create',

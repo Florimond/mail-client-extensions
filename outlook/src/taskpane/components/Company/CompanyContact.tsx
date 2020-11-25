@@ -17,7 +17,7 @@ class CompanyContact extends React.Component<CompanyContactProps, CompanyContact
     }
 
     public render(): JSX.Element {
-        const {company} = this.context.partner;
+        const {company} = this.context.partners[this.context.selectedPartner];
 
         let addressSection = null;
         if (company.getLocation()) {

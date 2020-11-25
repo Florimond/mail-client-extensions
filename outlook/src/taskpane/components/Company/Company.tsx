@@ -16,7 +16,7 @@ class Company extends React.Component<CompanyProps, CompanyState> {
     }
 
     render() {
-        const {company} = this.context.partner;
+        const {company} = this.context.partners[this.context.selectedPartner];
         const profileCardData: ProfileCardProps = {
             domain: company.getDomain(),
             name: company.getName(),

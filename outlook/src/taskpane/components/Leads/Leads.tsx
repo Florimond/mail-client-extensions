@@ -27,7 +27,7 @@ class Leads extends React.Component<LeadsProps, LeadsState> {
 
     loadLeads = () => {
         const requestJson = {
-            partner: this.context.partner.id,
+            partner: this.context.partners[this.context.selectedPartner].id,
             offset: this.leadOffset,
             limit: this.leadLimit
         }
@@ -88,8 +88,10 @@ class Leads extends React.Component<LeadsProps, LeadsState> {
     }
 
     public render(): JSX.Element {
+        const partner = this.context.partners[this.context.selectedPartner];
+
         // Modules are loaded asynchronously and crm is displayed before the partner is populated.
-        if (this.state.loaded === false && this.context.partner.id !== -1) {
+        if (this.state.loaded === false && this.context.selectedPartner && partner.id !== -1) {
             this.loadLeads();
         }
 
@@ -101,7 +103,7 @@ class Leads extends React.Component<LeadsProps, LeadsState> {
         let content = <div>None found</div>;
         if (this.state.leads.length) {
             content = <LeadList leads={this.state.leads} more={this.loadMore} log={this.log} showMore={this.state.showMore}></LeadList>;
-        } else if (this.context.partner.id === -1) {
+        } else if (partner.id === -1) {
             content = <div className='add-to-db-txt'>Add the contact to create opportunities</div>
         }
 
@@ -110,7 +112,7 @@ class Leads extends React.Component<LeadsProps, LeadsState> {
                 <div className='tile-title-space'>
                     <div className='tile-title'>
                     <div className='text'>OPPORTUNITIES</div>
-                    {this.context.partner.id !== -1 ? <div className='button' onClick={this.goToLeadForm}>New</div> : null}
+                    {partner.id !== -1 ? <div className='button' onClick={this.goToLeadForm}>New</div> : null}
                     </div>
                 </div>
 

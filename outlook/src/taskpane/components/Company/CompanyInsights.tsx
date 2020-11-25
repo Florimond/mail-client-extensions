@@ -89,7 +89,7 @@ class CompanyInsights extends React.Component<CompanyInsightsProps, CompanyInsig
   }
 
   public render(): JSX.Element {
-    const { company } = this.context.partner;
+    const { company } = this.context.partners[this.context.selectedPartner];
     let items = [
         { title: "Industry", value: company.getIndustry() },
         { title: "Employees", value: company.getEmployees() },
